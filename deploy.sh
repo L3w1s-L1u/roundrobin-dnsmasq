@@ -1,8 +1,13 @@
 #! /bin/bash
 # Docker compose file and dnsmasq config generator
 # 
+if [[ "$USER" != "root" ]];then
+    echo "Please run this script with sudo."
+    exit -1
+fi
 
 source "${PWD}/utils.sh"
+iptables_rules_dir="/etc/iptables"
 compose_tmpl="${PWD}/template/docker-compose.yml.tmpl"
 compose_file="${PWD}/docker-compose.yml"
 dnsmasq_config_tmpl="${PWD}/template/dnsmasq.conf.tmpl"
@@ -70,7 +75,7 @@ while [[ "${dns_count}" -lt "${dns_max}" ]];do
 		exit 1
 	fi
 	upstream_dns_list="${upstream_dns_list} ${dns_name} ${dns_ip}"
-	dns_count="$((dns_count+1))"
+	((dns_count++))
 done
 
 if [[ ${dns_count} -eq ${dns_max} ]];then
@@ -98,11 +103,30 @@ case "${confirm}" in
 		exit 0
 		;;
 	[Yy])
-		generate_config_files "${upstream_dns_list}" "${local_ip}" "${local_if}"
-		echo "Generated ${compose_file}, ${dnsmasq_config_file}"
 		;;
 	*)
 		echo "Only y(Y) or n(N) accept, default to No."
 		exit 0
 		;;
 esac
+
+generate_config_files "${upstream_dns_list}" "${local_ip}" "${local_if}"
+echo "Generated ${compose_file}, ${dnsmasq_config_file}"
+
+echo "Save current iptable rules ..."
+if ! [[ -d "${iptables_rules_dir}" ]];then
+	mkdir "${iptables_rules_dir}"
+fi
+iptables-save > "${iptables_rules_dir}/rules.v4.default"
+echo "Current iptable rules saved as ${iptables_rules_dir}/rules.v4.default"
+
+echo "Adding iptables rules ..."
+
+while [ ${dns_count} -gt  0 ]
+do
+	mapped_port=$((dns_port+dns_count))
+	iptables -t nat -A PREROUTING -p udp -d "${local_ip}/32" -m udp	--dport 53 -m state --state NEW \
+	-m statistic --mode nth --every "${dns_count}" --packet 0 -j DNAT --to-destination="${local_ip}:${mapped_port}"
+	dns_count=$((dns_count-1))
+done
+echo "All rules added. Please run \"docker-compose up\" to bring up your dns caching servers."
