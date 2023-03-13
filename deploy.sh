@@ -30,8 +30,7 @@ dns_max=10
 
 # generate docker-compose and dnsmasq config files
 # param-1: upstream dns list [dns_name1 dns_ip1 ... dns_namen dns_ipn]
-# param-2: dnsmasq server listen address
-# param-3: dnsmasq server listen interface
+# param-2: dnsmasq server listen interface
 generate_config_files()
 {
 	echo "generating compose and config files ..."
@@ -57,8 +56,7 @@ generate_config_files()
 			fi
    			sed -f - "${dnsmasq_config_tmpl}" > "${upstream_path}/${dnsmasq_config_file}" <<-EOF
 				s/#server=$/server=${i}/g
-				s/#listen-address=$/listen-address=${2}/g
-				s/#no-dhcp-interface=$/no-dhcp-interface=${3}/g
+				s/#no-dhcp-interface=$/no-dhcp-interface=${2}/g
 			EOF
 		fi
 	done
