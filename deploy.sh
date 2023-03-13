@@ -129,6 +129,8 @@ do
 	mapped_port=$((dns_port+dns_count))
 	iptables -t nat -A PREROUTING -p udp -d "${local_ip}/32" -m udp	--dport 53 -m state --state NEW \
 	-m statistic --mode nth --every "${dns_count}" --packet 0 -j DNAT --to-destination="${local_ip}:${mapped_port}"
+	iptables -t nat -A OUTPUT -p udp -o lo -m udp --dport 53 -m state --state NEW \
+	-m statistic --mode nth --every "${dns_count}" --packet 0 -j DNAT --to-destination="${local_ip}:${mapped_port}"
 	dns_count=$((dns_count-1))
 done
 iptables-save > "${iptables_rules_dir}/rules.v4.roundrobin-dnsmasq"
