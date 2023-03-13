@@ -5,6 +5,10 @@ if [[ "$USER" != "root" ]];then
     echo "Please run this script with sudo."
     exit -1
 fi
+if ! [[ -x "/sbin/iptables-save" ]];then
+    echo "Please install \"iptables-persistent\", your original iptables rules need to be saved first."
+    exit -1
+fi
 
 source "${PWD}/utils.sh"
 iptables_rules_dir="/etc/iptables"
@@ -24,7 +28,7 @@ dns_port=5300
 web_port=5380
 dns_max=10
 
-# generate compose and config files
+# generate docker-compose and dnsmasq config files
 # param-1: upstream dns list [dns_name1 dns_ip1 ... dns_namen dns_ipn]
 # param-2: dnsmasq server listen address
 # param-3: dnsmasq server listen interface
@@ -62,7 +66,7 @@ generate_config_files()
 }
 
 # Main
-echo "Please provide some public DNS names and IPs ..."
+echo "Please provide upstream public DNS names and IPs ..."
 
 while [[ "${dns_count}" -lt "${dns_max}" ]];do
 	echo && read -e -p "${prompt_dns_name}" dns_name
@@ -121,7 +125,7 @@ iptables-save > "${iptables_rules_dir}/rules.v4.default"
 echo "Current iptable rules saved as ${iptables_rules_dir}/rules.v4.default"
 
 echo "Adding iptables rules ..."
-
+dns_port=5300
 while [ ${dns_count} -gt  0 ]
 do
 	mapped_port=$((dns_port+dns_count))
@@ -129,4 +133,7 @@ do
 	-m statistic --mode nth --every "${dns_count}" --packet 0 -j DNAT --to-destination="${local_ip}:${mapped_port}"
 	dns_count=$((dns_count-1))
 done
+iptables-save > "${iptables_rules_dir}/rules.v4.roundrobin-dnsmasq"
+echo "Modified iptables saved as ${iptables_rules_dir}/rules.v4.roundrobin-dnsmasq."
+
 echo "All rules added. Please run \"docker-compose up\" to bring up your dns caching servers."
