@@ -2,7 +2,7 @@
 
 An iptables-based round-robin load balanced dns caching server.
 
-This requirement is inspired by [this post:](https://superuser.com/questions/1540076/is-it-possible-to-round-robin-dns-requests/1544801#1544801) and should be considered as an alternative to a nginx+ enabled DNS load balancing system if you are not ready to pay for "nginx+" features.
+This requirement is inspired by [this post](https://superuser.com/questions/1540076/is-it-possible-to-round-robin-dns-requests/1544801#1544801) and should be considered as an alternative to a nginx+ enabled DNS load balancing system if you are not ready to pay for "nginx+" features.
 
 ## Overview 
 
