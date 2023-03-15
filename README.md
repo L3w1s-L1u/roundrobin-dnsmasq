@@ -150,6 +150,42 @@ To reload resolvers:
 
 3. Modify dnsmasq config files or docker-compose file and re-run compose.
 
+To split log files:
+
+The template dnsmasq config file choose to log queries by default. If you don't like it you can comment out line "log-queries" in template file.
+
+If you need log queries, the log file will grow large very quickly when your resolver is heavily loaded. To prevent dnsmasq log file becoming too large you can use "logrotate" to auto split it and compress to small files.
+
+1. Install logrotate in your docker host environment.
+
+2. Modify logrotate config file by adding a config file "dnsmasq" in directory "/etc/logrotate.d/". File content looks like this:
+
+```
+/srv/roundrobin-dnsmasq/cloudflare/logs/dnsmasq.log {
+        size 5M
+        su root
+        daily
+        rotate 30
+        compress
+        missingok
+        notifempty
+        postrotate
+                service dnsmasq restart
+        endscript
+}
+
+```
+Note that the path of "dnsmasq.log" should be the same as in your "docker-compose.yml" file.
+
+This section is for one resolver. If you have multiple resolvers in your compose file, you should have one this section for each resolver.
+
+3. Run logrotate to reload this config file and logrotate will automatically split dnsmasq.log file and compress it into a tar file once the file size exceeds the limit.
+
+```
+$sudo logrotate /etc/logrotate.d/dnsmasq
+
+```
+
 ## Known Issues
 
 dig using lo interface will get abnormal reply:
