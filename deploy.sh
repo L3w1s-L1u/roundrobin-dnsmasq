@@ -46,7 +46,7 @@ generate_config_files()
 				s/\[DNS_PORT\]/${dns_port}/g
 				s/\[WEB_PORT\]/${web_port}/g
 			EOF
-			sed -n "4,18p" tmp >> "${compose_file}"
+			sed -n "4,19p" tmp >> "${compose_file}"
 			upstream_path="${PWD}/${i}"
 		elif ! [[  "$(ip_invalid ${i})" ]] ;then 
 			echo "generate config file for upstream: ${i}"
